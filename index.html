@@ -45,7 +45,7 @@
   main {
     width: min(100%, 740px);
     margin: 0 auto;
-    padding: clamp(15px, 4vw, 20px);
+    padding: clamp(17px, 4vw, 28px);
     border: 1px solid var(--border);
     border-radius: 18px;
     background: var(--surface);
@@ -104,7 +104,7 @@
   .desc { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
   .tag { white-space: nowrap; font-size: 10px; padding: 3px 6px; border-radius: 6px; color: var(--muted); background: var(--soft); margin-top: 3px; }
   mark { background: #fff1b8; color: #4c4021; border-radius: 2px; padding: 0 1px; }
-  /* The viewport is sized to the actual height of three result rows in JS. */
+  /* Mobile: display 2.6 rows; desktop: display 3 rows. */
   #results.scrolling {
     overflow-y: auto;
     overflow-x: hidden;
@@ -131,7 +131,7 @@
 <main>
   <p class="kicker">TAIPEI CITY GUIDE · FOOD INDEX</p>
   <h1>🔍 台湾グルメを探す</h1>
-  <p class="intro">料理名・説明文から検索。中国語・日本語・表記ゆれにも対応！</p>
+  <p class="intro">料理名・説明文から検索。中国語・日本語表記ゆれにも対応！</p>
   <label class="search-shell" for="search">
     <svg class="search-svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
     <input id="search" type="search" disabled autocomplete="off" spellcheck="false" placeholder="例：豆腐、牡蠣、スープ、蛋餅" aria-label="料理を検索">
@@ -141,7 +141,7 @@
     <span>人気のキーワード</span>
     <button type="button" data-example="餅">餅</button>
     <button type="button" data-example="スープ">スープ</button>
-    <button type="button" data-example="雞">雞</button>
+    <button type="button" data-example="鶏">鶏</button>
   </div>
   <nav class="filters" id="filters" aria-label="カテゴリーフィルター"></nav>
   <section aria-labelledby="list-title">
@@ -245,24 +245,31 @@ function drawFilters() {
 }
 function resizeResultViewport() {
   const rows = [...results.querySelectorAll(".result")];
-  const needsScroll = rows.length > 3;
+  const mobile = window.matchMedia("(max-width: 600px)").matches;
+  // Change 2.6 to 2.5 or 2.7 to fine-tune the mobile result window.
+  const visibleRows = mobile ? 2.6 : 3;
+  const fullRows = Math.floor(visibleRows);
+  const needsScroll = rows.length > fullRows;
   results.classList.toggle("scrolling", needsScroll);
   scrollTip.hidden = !needsScroll;
   if (!needsScroll) {
     results.style.maxHeight = "none";
     return;
   }
-  // Actual row heights vary on phones / within narrow Notion embeds.
-  // Measure the first 3, avoiding a fixed height that clips Japanese text.
-  const firstThreeHeight = rows.slice(0, 3).reduce((sum, row) => sum + row.getBoundingClientRect().height, 0);
-  results.style.maxHeight = `${Math.ceil(firstThreeHeight)}px`;
+  // Measure actual rendered rows, including Japanese text wrapping.
+  // Show two full rows plus 60% of the third on mobile.
+  const fullHeight = rows.slice(0, fullRows).reduce((sum, row) => sum + row.getBoundingClientRect().height, 0);
+  const nextHeight = rows[fullRows]?.getBoundingClientRect().height ?? 0;
+  const fraction = visibleRows - fullRows;
+  results.style.maxHeight = `${Math.ceil(fullHeight + nextHeight * fraction)}px`;
 }
+
 function drawResults() {
   const matched = currentMatches();
   count.textContent = `${matched.length} 件`;
   results.replaceChildren();
   results.style.maxHeight = "none";
-  results.classList.toggle("scrolling", matched.length > 3);
+  results.classList.toggle("scrolling", matched.length > (window.matchMedia("(max-width: 600px)").matches ? 2 : 3));
   const terms = searchTerms();
   // Include alternative spellings when highlighting an equivalent match.
   const highlightTerms = [...new Set(terms.flatMap(variantsFor))];
