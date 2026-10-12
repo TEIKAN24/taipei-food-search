@@ -160,6 +160,7 @@
 "use strict";
 // The content is managed separately in foods.csv and synonyms.json.
 // Keep both files in the same folder as this index.html on GitHub Pages.
+// CSV row order is preserved within each category; categories remain in the fixed order below.
 let foods = [];
 let synonymGroups = [];
 let normalizedGroups = [];
@@ -340,22 +341,20 @@ function parseCsv(text) {
   if (row.some(v => v.trim() !== "")) rows.push(row);
   if (!rows.length) throw new Error("foods.csv が空です。");
   const headers = rows.shift().map(h => h.trim().toLowerCase());
-  for (const required of ["order", "category", "name", "description"]) {
+  for (const required of ["category", "name", "description"]) {
     if (!headers.includes(required)) throw new Error("foods.csv に列がありません: " + required);
   }
   return rows.map((values, position) => {
     const item = Object.fromEntries(headers.map((key, i) => [key, (values[i] || "").trim()]));
-    const order = Number(item.order);
-    if (!Number.isInteger(order) || order < 1 || !item.name || !cats.includes(item.category)) {
+    if (!item.name || !cats.includes(item.category)) {
       throw new Error(`foods.csv の ${position + 2} 行目を確認してください。`);
     }
     return {
-      order,
       category: item.category,
       name: item.name,
       description: item.description
     };
-  }).sort((a, b) => a.order - b.order);
+  }).sort((a, b) => cats.indexOf(a.category) - cats.indexOf(b.category));
 }
 
 async function loadData() {
@@ -374,11 +373,6 @@ async function loadData() {
     if (!Array.isArray(json.groups) || !json.groups.every(group =>
         Array.isArray(group) && group.every(word => typeof word === "string"))) {
       throw new Error("synonyms.json の groups を確認してください。");
-    }
-    // Duplicate order numbers make display order ambiguous; flag them for editing.
-    const orders = loadedFoods.map(f => f.order);
-    if (new Set(orders).size !== orders.length) {
-      throw new Error("foods.csv の order に重複があります。");
     }
     foods = loadedFoods;
     synonymGroups = json.groups;
