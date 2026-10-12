@@ -45,7 +45,7 @@
   main {
     width: min(100%, 740px);
     margin: 0 auto;
-    padding: clamp(17px, 4vw, 28px);
+    padding: clamp(15px, 4vw, 20px);
     border: 1px solid var(--border);
     border-radius: 18px;
     background: var(--surface);
@@ -131,7 +131,7 @@
 <main>
   <p class="kicker">TAIPEI CITY GUIDE · FOOD INDEX</p>
   <h1>🔍 台湾グルメを探す</h1>
-  <p class="intro">料理名・食材・説明文から検索。中国語・日本語・表記ゆれにも対応！</p>
+  <p class="intro">料理名・説明文から検索。中国語・日本語・表記ゆれにも対応！</p>
   <label class="search-shell" for="search">
     <svg class="search-svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
     <input id="search" type="search" disabled autocomplete="off" spellcheck="false" placeholder="例：豆腐、牡蠣、スープ、蛋餅" aria-label="料理を検索">
@@ -139,11 +139,9 @@
   </label>
   <div class="quick" aria-label="おすすめ検索">
     <span>人気のキーワード</span>
-    <button type="button" data-example="牡蠣">牡蠣</button>
-    <button type="button" data-example="もち">もち</button>
+    <button type="button" data-example="餅">餅</button>
     <button type="button" data-example="スープ">スープ</button>
-    <button type="button" data-example="豆腐">豆腐</button>
-    <button type="button" data-example="鶏">鶏</button>
+    <button type="button" data-example="雞">雞</button>
   </div>
   <nav class="filters" id="filters" aria-label="カテゴリーフィルター"></nav>
   <section aria-labelledby="list-title">
@@ -154,7 +152,7 @@
     <div id="results" role="region" aria-label="料理の検索結果" tabindex="0"><div class="empty">料理データを読み込んでいます…</div></div>
     <p id="scroll-tip" class="scroll-tip" hidden>↓ スクロールして続きを見る</p>
   </section>
-  <p class="foot">台湾グルメ全<span id="total-food-count">—</span>品 · TAIPEI CITY GUIDE</p>
+  <p class="foot">台湾グルメ全<span id="total-food-count">—</span>品</p>
 </main>
 <script>
 "use strict";
