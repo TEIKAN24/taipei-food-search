@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<meta name="description" content="台湾グルメ66品を料理名や説明文から検索できるミニガイド。">
+<meta name="description" content="台湾グルメを料理名や説明文から検索できるミニガイド。">
 <title>台湾グルメ検索 | TAIPEI CITY GUIDE</title>
 <style>
   :root {
@@ -134,12 +134,12 @@
   <p class="intro">料理名・食材・説明文から検索。中国語・日本語・表記ゆれにも対応！</p>
   <label class="search-shell" for="search">
     <svg class="search-svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
-    <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="例：とり、えび、卵、湯" aria-label="料理を検索">
+    <input id="search" type="search" disabled autocomplete="off" spellcheck="false" placeholder="例：豆腐、牡蠣、スープ、蛋餅" aria-label="料理を検索">
     <button class="clear" id="clear" type="button" aria-label="検索をクリア">×</button>
   </label>
   <div class="quick" aria-label="おすすめ検索">
     <span>人気のキーワード</span>
-    <button type="button" data-example="蚵仔">牡蠣</button>
+    <button type="button" data-example="牡蠣">牡蠣</button>
     <button type="button" data-example="もち">もち</button>
     <button type="button" data-example="スープ">スープ</button>
     <button type="button" data-example="豆腐">豆腐</button>
@@ -151,15 +151,18 @@
       <h2 id="list-title">料理一覧</h2>
       <span class="result-count" id="result-count" role="status" aria-live="polite"></span>
     </header>
-    <div id="results" role="region" aria-label="料理の検索結果" tabindex="0"></div>
+    <div id="results" role="region" aria-label="料理の検索結果" tabindex="0"><div class="empty">料理データを読み込んでいます…</div></div>
     <p id="scroll-tip" class="scroll-tip" hidden>↓ スクロールして続きを見る</p>
   </section>
-  <p class="foot">台湾グルメ全66品 · TAIPEI CITY GUIDE</p>
+  <p class="foot">台湾グルメ全<span id="total-food-count">—</span>品 · TAIPEI CITY GUIDE</p>
 </main>
 <script>
 "use strict";
-// EDIT HERE: add or change dishes in this array to update search results.
-const foods = [{"name":"蚵仔麵線","description":"牡蠣入り台湾そうめん","category":"🔰 初心者"},{"name":"蚵仔煎","description":"牡蠣入り台湾風オムレツ","category":"🔰 初心者"},{"name":"台式飯糰","description":"台湾式おにぎり","category":"🔰 初心者"},{"name":"鹹豆漿","description":"塩味の豆乳スープ","category":"🔰 初心者"},{"name":"大腸包小腸","description":"台湾式ホットドッグ","category":"🔰 初心者"},{"name":"刈包","description":"台湾風豚肉バーガー","category":"🔰 初心者"},{"name":"鹽水雞","description":"台湾式塩ゆで鶏と野菜の和え物","category":"🔰 初心者"},{"name":"白斬雞","description":"台湾風ゆで鶏","category":"🔰 初心者"},{"name":"傳統豆花","description":"台湾風豆腐スイーツ","category":"🔰 初心者"},{"name":"愛玉","description":"台湾ゼリー、台湾固有種の天然デザート","category":"🔰 初心者"},{"name":"台式麻糬","description":"台湾風もち","category":"🔰 初心者"},{"name":"花生捲冰淇淋","description":"ピーナッツアイスクレープ","category":"🔰 初心者"},{"name":"蛋餅","description":"台湾風クレープ","category":"🔰 初心者"},{"name":"蔥抓餅","description":"台湾風ネギ入りパイ","category":"🔰 初心者"},{"name":"胡椒餅","description":"胡椒風味の焼き肉まん","category":"🔰 初心者"},{"name":"地瓜球","description":"サツマイモのもちもち揚げボール","category":"🔰 初心者"},{"name":"炸雞排","description":"台湾風巨大フライドチキン","category":"🔰 初心者"},{"name":"滷味","description":"台湾風スパイス煮込み","category":"🔰 初心者"},{"name":"鐵蛋","description":"醤油で煮込んだ硬めの味付け卵","category":"🔰 初心者"},{"name":"芋圓","description":"タロイモのもちもち団子","category":"🔰 初心者"},{"name":"粉粿","description":"台湾風もちもちゼリー","category":"🔰 初心者"},{"name":"冬瓜茶","description":"冬瓜を煮詰めた甘いお茶","category":"🔰 初心者"},{"name":"水蓮菜","description":"タイワンガガブタの炒め物","category":"🏮 地元民"},{"name":"燒仙草","description":"温かい仙草ゼリー","category":"🏮 地元民"},{"name":"杏仁茶","description":"台湾風アーモンドドリンク","category":"🏮 地元民"},{"name":"米粉湯","description":"ビーフン入りスープ","category":"🏮 地元民"},{"name":"肉圓","description":"台湾風肉団子","category":"🏮 地元民"},{"name":"甜不辣","description":"台湾風さつま揚げの煮込み","category":"🏮 地元民"},{"name":"炒米粉","description":"台湾風焼きビーフン","category":"🏮 地元民"},{"name":"米糕","description":"台湾風もち米の蒸しご飯","category":"🏮 地元民"},{"name":"肉羹","description":"豚肉入りとろみスープ","category":"🏮 地元民"},{"name":"潤餅／春巻","description":"台湾風生春巻き","category":"🏮 地元民"},{"name":"虱目魚粥","description":"サバヒー入りお粥","category":"🏮 地元民"},{"name":"土魠魚羹","description":"揚げ魚入りとろみスープ","category":"🏮 地元民"},{"name":"雞捲","description":"台湾風肉の湯葉巻き揚げ","category":"🏮 地元民"},{"name":"三杯雞","description":"鶏肉の台湾風醤油煮込み","category":"🏮 地元民"},{"name":"麻油雞","description":"ごま油とショウガの鶏肉スープ","category":"🏮 地元民"},{"name":"菜脯蛋","description":"切り干し大根入り卵焼き","category":"🏮 地元民"},{"name":"客家小炒","description":"豚肉・イカ・豆腐干の炒め物","category":"🏮 地元民"},{"name":"碗粿","description":"米粉を蒸した台湾風茶碗蒸し","category":"🏮 地元民"},{"name":"油飯","description":"台湾風おこわ","category":"🏮 地元民"},{"name":"蘿蔔糕","description":"台湾風大根もち","category":"🏮 地元民"},{"name":"肉粽","description":"豚肉入り中華ちまき","category":"🏮 地元民"},{"name":"四神湯","description":"ハトムギと豚モツの薬膳スープ","category":"🏮 地元民"},{"name":"排骨酥湯","description":"揚げスペアリブのスープ","category":"🏮 地元民"},{"name":"藥燉排骨","description":"薬膳スペアリブスープ","category":"🏮 地元民"},{"name":"乾意麵","description":"台湾風汁なし麺","category":"🏮 地元民"},{"name":"芋粿巧","description":"タロイモ入りもち米粉の蒸し料理","category":"🏮 地元民"},{"name":"草仔粿","description":"ヨモギ入り台湾風草もち","category":"🏮 地元民"},{"name":"皮蛋豆腐","description":"ピータンと冷奴","category":"⚔️ ちょっと冒険"},{"name":"鵝肉","description":"ガチョウ肉料理","category":"⚔️ ちょっと冒険"},{"name":"臭豆腐","description":"発酵豆腐","category":"⚔️ ちょっと冒険"},{"name":"麻辣臭豆腐","description":"発酵豆腐のピリ辛煮込み","category":"⚔️ ちょっと冒険"},{"name":"麻辣鴨血","description":"鴨の血を固めた麻辣煮込み","category":"⚔️ ちょっと冒険"},{"name":"豬血糕","description":"豚の血入りもち米","category":"⚔️ ちょっと冒険"},{"name":"黑白切","description":"豚肉・内臓の盛り合わせ","category":"⚔️ ちょっと冒険"},{"name":"田雞湯","description":"カエル肉のスープ","category":"⚔️ ちょっと冒険"},{"name":"下水湯","description":"鶏の内臓入りスープ","category":"⚔️ ちょっと冒険"},{"name":"炒下水","description":"鶏の内臓炒め","category":"⚔️ ちょっと冒険"},{"name":"蛇湯","description":"ヘビスープ","category":"💀 覚悟"},{"name":"雞佛","description":"鶏の精巣料理","category":"💀 覚悟"},{"name":"生腸","description":"豚の子宮を使った料理","category":"💀 覚悟"},{"name":"豬腦湯","description":"豚の脳みそ入りスープ","category":"💀 覚悟"},{"name":"豬眼睛","description":"豚の目玉料理","category":"💀 覚悟"},{"name":"豬鞭","description":"豚の生殖器を使った料理","category":"💀 覚悟"},{"name":"炸蟋蟀","description":"コオロギの素揚げ","category":"💀 覚悟"}];
+// The content is managed separately in foods.csv and synonyms.json.
+// Keep both files in the same folder as this index.html on GitHub Pages.
+let foods = [];
+let synonymGroups = [];
+let normalizedGroups = [];
 
 const cats = ["すべて", "🔰 初心者", "🏮 地元民", "⚔️ ちょっと冒険", "💀 覚悟"];
 const input = document.querySelector("#search");
@@ -168,27 +171,12 @@ const filters = document.querySelector("#filters");
 const results = document.querySelector("#results");
 const count = document.querySelector("#result-count");
 const scrollTip = document.querySelector("#scroll-tip");
+const footerCount = document.querySelector("#total-food-count");
 let selected = cats[0];
 
 const normalized = s => String(s).normalize("NFKC").toLocaleLowerCase();
 
-// EDIT HERE: Add equivalent spellings / words to the same [] group.
-// Only exact query words activate a group. This avoids accidentally
-// treating all searches for e.g. "肉" as searches for "チキン".
-const synonymGroups = [
-  ["鶏", "雞", "鷄", "鶏肉", "雞肉", "とり", "チキン", "とり肉", "とりにく", "chicken"],
-  ["豚", "豬", "猪", "豚肉", "豬肉", "猪肉", "ポーク", "pork"],
-  ["牛", "牛肉", "ビーフ", "beef"],
-  ["牡蠣", "カキ", "蚵仔", "蚵", "オイスター", "oyster"],
-  ["豆乳", "豆漿", "ソイミルク"],
-  ["ネギ", "ねぎ", "蔥", "葱"],
-  ["大根", "蘿蔔"],
-  ["タロイモ", "タロ芋", "芋頭"],
-  ["卵", "たまご", "玉子", "蛋"],
-  ["エビ", "えび", "蝦", "海老", "シュリンプ"],
-];
-
-const normalizedGroups = synonymGroups.map(group => [...new Set(group.map(normalized))]);
+// Synonym groups are loaded from synonyms.json, then normalized for searching.
 function variantsFor(term) {
   const group = normalizedGroups.find(group => group.includes(term));
   return group || [term];
@@ -325,8 +313,95 @@ document.querySelectorAll("[data-example]").forEach(button => {
   });
 });
 window.addEventListener("resize", () => requestAnimationFrame(resizeResultViewport));
-drawFilters();
-onSearch();
+
+// Minimal CSV parser: supports UTF-8 BOM, quoted commas, quotes, and newlines.
+function parseCsv(text) {
+  const content = text.replace(/^\uFEFF/, "");
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    if (char === '"') {
+      if (inQuotes && content[i + 1] === '"') { field += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (char === "," && !inQuotes) {
+      row.push(field); field = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      row.push(field); field = "";
+      if (row.some(v => v.trim() !== "")) rows.push(row);
+      row = [];
+      if (char === "\r" && content[i + 1] === "\n") i++;
+    } else {
+      field += char;
+    }
+  }
+  if (inQuotes) throw new Error("CSV の引用符が閉じていません。");
+  row.push(field);
+  if (row.some(v => v.trim() !== "")) rows.push(row);
+  if (!rows.length) throw new Error("foods.csv が空です。");
+  const headers = rows.shift().map(h => h.trim().toLowerCase());
+  for (const required of ["order", "category", "name", "description"]) {
+    if (!headers.includes(required)) throw new Error("foods.csv に列がありません: " + required);
+  }
+  return rows.map((values, position) => {
+    const item = Object.fromEntries(headers.map((key, i) => [key, (values[i] || "").trim()]));
+    const order = Number(item.order);
+    if (!Number.isInteger(order) || order < 1 || !item.name || !cats.includes(item.category)) {
+      throw new Error(`foods.csv の ${position + 2} 行目を確認してください。`);
+    }
+    return {
+      order,
+      category: item.category,
+      name: item.name,
+      description: item.description
+    };
+  }).sort((a, b) => a.order - b.order);
+}
+
+async function loadData() {
+  try {
+    const [foodResponse, synonymResponse] = await Promise.all([
+      fetch("./foods.csv", { cache: "no-store" }),
+      fetch("./synonyms.json", { cache: "no-store" })
+    ]);
+    if (!foodResponse.ok || !synonymResponse.ok) {
+      throw new Error("foods.csv または synonyms.json が見つかりません。");
+    }
+    const [csvText, json] = await Promise.all([
+      foodResponse.text(), synonymResponse.json()
+    ]);
+    const loadedFoods = parseCsv(csvText);
+    if (!Array.isArray(json.groups) || !json.groups.every(group =>
+        Array.isArray(group) && group.every(word => typeof word === "string"))) {
+      throw new Error("synonyms.json の groups を確認してください。");
+    }
+    // Duplicate order numbers make display order ambiguous; flag them for editing.
+    const orders = loadedFoods.map(f => f.order);
+    if (new Set(orders).size !== orders.length) {
+      throw new Error("foods.csv の order に重複があります。");
+    }
+    foods = loadedFoods;
+    synonymGroups = json.groups;
+    normalizedGroups = synonymGroups.map(group => [...new Set(group.map(normalized))]);
+    footerCount.textContent = String(foods.length);
+    input.disabled = false;
+    drawFilters();
+    onSearch();
+  } catch (error) {
+    console.error("TAIPEI CITY GUIDE: data load error", error);
+    filters.replaceChildren();
+    results.replaceChildren();
+    results.classList.remove("scrolling");
+    results.style.maxHeight = "none";
+    scrollTip.hidden = true;
+    count.textContent = "読み込みエラー";
+    const notice = document.createElement("div");
+    notice.className = "empty";
+    notice.textContent = "データを読み込めませんでした。GitHub Pages で開き、index.html・foods.csv・synonyms.json が同じフォルダにあるか確認してください。";
+    results.append(notice);
+  }
+}
+loadData();
 </script>
 </body>
 </html>
