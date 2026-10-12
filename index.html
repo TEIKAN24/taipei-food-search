@@ -77,7 +77,7 @@
     font-size: 17px; color: var(--muted); cursor: pointer;
   }
   .clear.visible { display: inline-grid; place-items: center; }
-  .clear:focus-visible, .pill:focus-visible, .more:focus-visible, .quick button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .clear:focus-visible, .pill:focus-visible, .quick button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .quick { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; color: var(--muted); }
   .quick button {
     font: inherit; color: var(--muted); background: transparent; border: 1px solid var(--border);
@@ -104,9 +104,19 @@
   .desc { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
   .tag { white-space: nowrap; font-size: 10px; padding: 3px 6px; border-radius: 6px; color: var(--muted); background: var(--soft); margin-top: 3px; }
   mark { background: #fff1b8; color: #4c4021; border-radius: 2px; padding: 0 1px; }
-  .more { display: block; width: 100%; cursor: pointer; background: var(--soft); border: 1px solid var(--border); border-radius: 9px; font: inherit; font-size: 13px; color: var(--text); padding: 11px; margin-top: 13px; }
-  .more:hover { color: var(--accent); }
-  .more[hidden] { display: none; }
+  /* The viewport is sized to the actual height of three result rows in JS. */
+  #results.scrolling {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) var(--soft);
+    overscroll-behavior: contain;
+  }
+  #results.scrolling::-webkit-scrollbar { width: 7px; }
+  #results.scrolling::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 8px; }
+  .scroll-tip { font-size: 11px; margin: 9px 2px 0; text-align: center; color: var(--muted); }
+  .scroll-tip[hidden] { display: none; }
   .foot { text-align: center; color: var(--muted); font-size: 11px; margin: 20px 0 0; }
   @media (max-width: 420px) {
     main { border-radius: 12px; padding: 17px 13px 20px; }
@@ -121,18 +131,19 @@
 <main>
   <p class="kicker">TAIPEI CITY GUIDE · FOOD INDEX</p>
   <h1>🔍 台湾グルメを探す</h1>
-  <p class="intro">料理名・説明文から検索。中国語でも日本語でもOK！</p>
+  <p class="intro">料理名・食材・説明文から検索。中国語・日本語・表記ゆれにも対応！</p>
   <label class="search-shell" for="search">
     <svg class="search-svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
-    <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="例：台湾、肉、湯、餅" aria-label="料理を検索">
+    <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="例：豆腐、牡蠣、スープ、蛋餅" aria-label="料理を検索">
     <button class="clear" id="clear" type="button" aria-label="検索をクリア">×</button>
   </label>
   <div class="quick" aria-label="おすすめ検索">
     <span>人気のキーワード</span>
-    <button type="button" data-example="蚵仔">牡蠣</button>
+    <button type="button" data-example="牡蠣">牡蠣</button>
     <button type="button" data-example="もち">もち</button>
-    <button type="button" data-example="雞">雞／鶏／チキン</button>
-    <button type="button" data-example="豬">猪／豚</button>
+    <button type="button" data-example="スープ">スープ</button>
+    <button type="button" data-example="豆腐">豆腐</button>
+    <button type="button" data-example="鶏">鶏</button>
   </div>
   <nav class="filters" id="filters" aria-label="カテゴリーフィルター"></nav>
   <section aria-labelledby="list-title">
@@ -140,8 +151,8 @@
       <h2 id="list-title">料理一覧</h2>
       <span class="result-count" id="result-count" role="status" aria-live="polite"></span>
     </header>
-    <div id="results"></div>
-    <button id="more" class="more" type="button" hidden>もっと見る ↓</button>
+    <div id="results" role="region" aria-label="料理の検索結果" tabindex="0"></div>
+    <p id="scroll-tip" class="scroll-tip" hidden>↓ スクロールして続きを見る</p>
   </section>
   <p class="foot">台湾グルメ全66品 · TAIPEI CITY GUIDE</p>
 </main>
@@ -156,17 +167,41 @@ const clear = document.querySelector("#clear");
 const filters = document.querySelector("#filters");
 const results = document.querySelector("#results");
 const count = document.querySelector("#result-count");
-const more = document.querySelector("#more");
+const scrollTip = document.querySelector("#scroll-tip");
 let selected = cats[0];
-let shown = foods.length;
 
 const normalized = s => String(s).normalize("NFKC").toLocaleLowerCase();
+
+// EDIT HERE: Add equivalent spellings / words to the same [] group.
+// Only exact query words activate a group. This avoids accidentally
+// treating all searches for e.g. "肉" as searches for "チキン".
+const synonymGroups = [
+  ["鶏", "雞", "鷄", "鶏肉", "雞肉", "とり", "チキン", "とり肉", "とりにく", "chicken"],
+  ["豚", "豬", "猪", "豚肉", "豬肉", "猪肉", "ポーク", "pork"],
+  ["牛", "牛肉", "ビーフ", "beef"],
+  ["牡蠣", "カキ", "蚵仔", "蚵", "オイスター", "oyster"],
+  ["豆乳", "豆漿", "ソイミルク"],
+  ["ネギ", "ねぎ", "蔥", "葱"],
+  ["大根", "蘿蔔"],
+  ["タロイモ", "タロ芋", "芋頭"],
+  ["卵", "たまご", "玉子", "蛋"],
+  ["エビ", "えび", "蝦", "海老", "シュリンプ"],
+];
+
+const normalizedGroups = synonymGroups.map(group => [...new Set(group.map(normalized))]);
+function variantsFor(term) {
+  const group = normalizedGroups.find(group => group.includes(term));
+  return group || [term];
+}
+function searchTerms() {
+  return normalized(input.value.trim()).split(/\s+/).filter(Boolean);
+}
 function currentMatches() {
-  const terms = normalized(input.value.trim()).split(/\s+/).filter(Boolean);
+  const terms = searchTerms();
   return foods.filter(food => {
     if (selected !== cats[0] && food.category !== selected) return false;
     const text = normalized(`${food.name} ${food.description} ${food.category}`);
-    return terms.every(term => text.includes(term));
+    return terms.every(term => variantsFor(term).some(alias => text.includes(alias)));
   });
 }
 function addHighlightedText(parent, value, terms) {
@@ -215,19 +250,35 @@ function drawFilters() {
     button.append(label, n);
     button.addEventListener("click", () => {
       selected = cat;
-      shown = foods.length;
       drawFilters();
       drawResults();
     });
     filters.append(button);
   }
 }
+function resizeResultViewport() {
+  const rows = [...results.querySelectorAll(".result")];
+  const needsScroll = rows.length > 3;
+  results.classList.toggle("scrolling", needsScroll);
+  scrollTip.hidden = !needsScroll;
+  if (!needsScroll) {
+    results.style.maxHeight = "none";
+    return;
+  }
+  // Actual row heights vary on phones / within narrow Notion embeds.
+  // Measure the first 3, avoiding a fixed height that clips Japanese text.
+  const firstThreeHeight = rows.slice(0, 3).reduce((sum, row) => sum + row.getBoundingClientRect().height, 0);
+  results.style.maxHeight = `${Math.ceil(firstThreeHeight)}px`;
+}
 function drawResults() {
   const matched = currentMatches();
-  count.textContent = `${matched.length} 件`; 
+  count.textContent = `${matched.length} 件`;
   results.replaceChildren();
-  const terms = normalized(input.value.trim()).split(/\s+/).filter(Boolean);
-
+  results.style.maxHeight = "none";
+  results.classList.toggle("scrolling", matched.length > 3);
+  const terms = searchTerms();
+  // Include alternative spellings when highlighting an equivalent match.
+  const highlightTerms = [...new Set(terms.flatMap(variantsFor))];
   if (!matched.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
@@ -239,7 +290,7 @@ function drawResults() {
     empty.append(face, message);
     results.append(empty);
   } else {
-    for (const food of matched.slice(0, shown)) {
+    for (const food of matched) {
       const row = document.createElement("article");
       row.className = "result";
       const left = document.createElement("div");
@@ -247,8 +298,8 @@ function drawResults() {
       name.className = "dish";
       const desc = document.createElement("p");
       desc.className = "desc";
-      addHighlightedText(name, food.name, terms);
-      addHighlightedText(desc, food.description, terms);
+      addHighlightedText(name, food.name, highlightTerms);
+      addHighlightedText(desc, food.description, highlightTerms);
       left.append(name, desc);
       const tag = document.createElement("span");
       tag.className = "tag";
@@ -257,17 +308,15 @@ function drawResults() {
       results.append(row);
     }
   }
-  more.hidden = matched.length <= shown;
-  if (!more.hidden) more.textContent = `もっと見る（残り ${matched.length - shown} 件）↓`;
+  results.scrollTop = 0;
+  resizeResultViewport();
 }
 function onSearch() {
-  shown = foods.length;
   clear.classList.toggle("visible", input.value.length > 0);
   drawResults();
 }
 input.addEventListener("input", onSearch);
 clear.addEventListener("click", () => { input.value = ""; onSearch(); input.focus(); });
-more.addEventListener("click", () => { shown += 10; drawResults(); });
 document.querySelectorAll("[data-example]").forEach(button => {
   button.addEventListener("click", () => {
     input.value = button.dataset.example;
@@ -275,6 +324,7 @@ document.querySelectorAll("[data-example]").forEach(button => {
     input.focus();
   });
 });
+window.addEventListener("resize", () => requestAnimationFrame(resizeResultViewport));
 drawFilters();
 onSearch();
 </script>
