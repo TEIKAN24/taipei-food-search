@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="台湾グルメ66品を料理名や説明文から検索できるミニガイド。">
+<title>台湾グルメ検索 | TAIPEI CITY GUIDE</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --page: #fff;
+    --surface: #fff;
+    --text: #252727;
+    --muted: #777f7d;
+    --border: #e7ebe9;
+    --soft: #f6f8f7;
+    --accent: #237c60;
+    --accent-faint: #eaf5ef;
+    --focus: #9bd9c3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #191a1a;
+      --surface: #252727;
+      --text: #f0f2f0;
+      --muted: #aab0ac;
+      --border: #393d3a;
+      --soft: #2d312e;
+      --accent: #83d3b0;
+      --accent-faint: #233c30;
+      --focus: #4bbf8b;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    padding: 10px 8px 16px;
+    background: var(--page);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+    line-height: 1.55;
+  }
+  main {
+    width: min(100%, 740px);
+    margin: 0 auto;
+    padding: clamp(17px, 4vw, 28px);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+  }
+  .kicker { font-size: 10px; letter-spacing: .17em; color: var(--accent); font-weight: 750; margin: 0 0 8px; }
+  h1 { font-size: clamp(20px, 4.8vw, 27px); line-height: 1.3; margin: 0 0 6px; font-weight: 760; }
+  .intro { font-size: 12px; color: var(--muted); margin: 0 0 19px; }
+  .search-shell {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--soft);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search-shell:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-faint); }
+  .search-svg { display: block; color: var(--muted); width: 20px; height: 20px; flex-shrink: 0; }
+  input {
+    min-width: 0; width: 100%; height: 49px;
+    border: 0; outline: none; padding: 0; background: transparent;
+    font: inherit; font-size: 15px; color: var(--text);
+    appearance: none;
+  }
+  input::placeholder { color: var(--muted); opacity: .9; }
+  input::-webkit-search-cancel-button { display: none; }
+  .clear {
+    display: none; width: 30px; height: 30px; flex-shrink: 0;
+    border: none; border-radius: 50%; background: var(--border);
+    font-size: 17px; color: var(--muted); cursor: pointer;
+  }
+  .clear.visible { display: inline-grid; place-items: center; }
+  .clear:focus-visible, .pill:focus-visible, .more:focus-visible, .quick button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .quick { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+  .quick button {
+    font: inherit; color: var(--muted); background: transparent; border: 1px solid var(--border);
+    padding: 3px 9px; border-radius: 30px; cursor: pointer;
+  }
+  .quick button:hover { border-color: var(--accent); color: var(--accent); }
+  .filters { display: flex; gap: 7px; flex-wrap: wrap; margin: 20px 0 15px; }
+  .pill {
+    border: 1px solid var(--border); background: var(--soft);
+    border-radius: 100px; padding: 7px 10px;
+    cursor: pointer; color: var(--text); font: inherit;
+    font-size: 12px; transition: background .15s, border-color .15s;
+  }
+  .pill.active { background: var(--accent-faint); color: var(--accent); border-color: var(--accent); font-weight: 650; }
+  .pill-count { opacity: .75; margin-left: 3px; font-variant-numeric: tabular-nums; }
+  .results-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding-bottom: 9px; border-bottom: 1px solid var(--border); }
+  .results-head h2 { margin: 0; font-size: 13px; font-weight: 750; }
+  .result-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .empty { padding: 32px 10px; text-align: center; color: var(--muted); font-size: 13px; }
+  .empty .emoji { font-size: 24px; display: block; margin-bottom: 7px; }
+  .result { display: flex; align-items: start; justify-content: space-between; gap: 10px; padding: 13px 2px; border-bottom: 1px solid var(--border); }
+  .result:last-child { border-bottom: 0; }
+  .dish { margin: 0 0 3px; font-weight: 725; font-size: 15px; line-height: 1.4; }
+  .desc { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .tag { white-space: nowrap; font-size: 10px; padding: 3px 6px; border-radius: 6px; color: var(--muted); background: var(--soft); margin-top: 3px; }
+  mark { background: #fff1b8; color: #4c4021; border-radius: 2px; padding: 0 1px; }
+  .more { display: block; width: 100%; cursor: pointer; background: var(--soft); border: 1px solid var(--border); border-radius: 9px; font: inherit; font-size: 13px; color: var(--text); padding: 11px; margin-top: 13px; }
+  .more:hover { color: var(--accent); }
+  .more[hidden] { display: none; }
+  .foot { text-align: center; color: var(--muted); font-size: 11px; margin: 20px 0 0; }
+  @media (max-width: 420px) {
+    main { border-radius: 12px; padding: 17px 13px 20px; }
+    .tag { font-size: 9px; }
+    .result { gap: 5px; }
+    .pill { font-size: 11px; padding: 7px 9px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">TAIPEI CITY GUIDE · FOOD INDEX</p>
+  <h1>🔍 台湾グルメを探す</h1>
+  <p class="intro">料理名・食材・説明文から検索。中国語でも日本語でもOK！</p>
+  <label class="search-shell" for="search">
+    <svg class="search-svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 5 5"/></svg>
+    <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="例：豆腐、牡蠣、スープ、蛋餅" aria-label="料理を検索">
+    <button class="clear" id="clear" type="button" aria-label="検索をクリア">×</button>
+  </label>
+  <div class="quick" aria-label="おすすめ検索">
+    <span>人気のキーワード</span>
+    <button type="button" data-example="牡蠣">牡蠣</button>
+    <button type="button" data-example="もち">もち</button>
+    <button type="button" data-example="スープ">スープ</button>
+    <button type="button" data-example="豆腐">豆腐</button>
+  </div>
+  <nav class="filters" id="filters" aria-label="カテゴリーフィルター"></nav>
+  <section aria-labelledby="list-title">
+    <header class="results-head">
+      <h2 id="list-title">料理一覧</h2>
+      <span class="result-count" id="result-count" role="status" aria-live="polite"></span>
+    </header>
+    <div id="results"></div>
+    <button id="more" class="more" type="button" hidden>もっと見る ↓</button>
+  </section>
+  <p class="foot">台湾グルメ全66品 · TAIPEI CITY GUIDE</p>
+</main>
+<script>
+"use strict";
+// EDIT HERE: add or change dishes in this array to update search results.
+const foods = [{"name":"蚵仔麵線","description":"牡蠣入り台湾そうめん","category":"🔰 初心者"},{"name":"蚵仔煎","description":"牡蠣入り台湾風オムレツ","category":"🔰 初心者"},{"name":"台式飯糰","description":"台湾式おにぎり","category":"🔰 初心者"},{"name":"鹹豆漿","description":"塩味の豆乳スープ","category":"🔰 初心者"},{"name":"大腸包小腸","description":"台湾式ホットドッグ","category":"🔰 初心者"},{"name":"刈包","description":"台湾風豚肉バーガー","category":"🔰 初心者"},{"name":"鹽水雞","description":"台湾式塩ゆで鶏と野菜の和え物","category":"🔰 初心者"},{"name":"白斬雞","description":"台湾風ゆで鶏","category":"🔰 初心者"},{"name":"傳統豆花","description":"台湾風豆腐スイーツ","category":"🔰 初心者"},{"name":"愛玉","description":"台湾ゼリー、台湾固有種の天然デザート","category":"🔰 初心者"},{"name":"台式麻糬","description":"台湾風もち","category":"🔰 初心者"},{"name":"花生捲冰淇淋","description":"ピーナッツアイスクレープ","category":"🔰 初心者"},{"name":"蛋餅","description":"台湾風クレープ","category":"🔰 初心者"},{"name":"蔥抓餅","description":"台湾風ネギ入りパイ","category":"🔰 初心者"},{"name":"胡椒餅","description":"胡椒風味の焼き肉まん","category":"🔰 初心者"},{"name":"地瓜球","description":"サツマイモのもちもち揚げボール","category":"🔰 初心者"},{"name":"炸雞排","description":"台湾風巨大フライドチキン","category":"🔰 初心者"},{"name":"滷味","description":"台湾風スパイス煮込み","category":"🔰 初心者"},{"name":"鐵蛋","description":"醤油で煮込んだ硬めの味付け卵","category":"🔰 初心者"},{"name":"芋圓","description":"タロイモのもちもち団子","category":"🔰 初心者"},{"name":"粉粿","description":"台湾風もちもちゼリー","category":"🔰 初心者"},{"name":"冬瓜茶","description":"冬瓜を煮詰めた甘いお茶","category":"🔰 初心者"},{"name":"水蓮菜","description":"タイワンガガブタの炒め物","category":"🏮 地元民"},{"name":"燒仙草","description":"温かい仙草ゼリー","category":"🏮 地元民"},{"name":"杏仁茶","description":"台湾風アーモンドドリンク","category":"🏮 地元民"},{"name":"米粉湯","description":"ビーフン入りスープ","category":"🏮 地元民"},{"name":"肉圓","description":"台湾風肉団子","category":"🏮 地元民"},{"name":"甜不辣","description":"台湾風さつま揚げの煮込み","category":"🏮 地元民"},{"name":"炒米粉","description":"台湾風焼きビーフン","category":"🏮 地元民"},{"name":"米糕","description":"台湾風もち米の蒸しご飯","category":"🏮 地元民"},{"name":"肉羹","description":"豚肉入りとろみスープ","category":"🏮 地元民"},{"name":"潤餅／春巻","description":"台湾風生春巻き","category":"🏮 地元民"},{"name":"虱目魚粥","description":"サバヒー入りお粥","category":"🏮 地元民"},{"name":"土魠魚羹","description":"揚げ魚入りとろみスープ","category":"🏮 地元民"},{"name":"雞捲","description":"台湾風肉の湯葉巻き揚げ","category":"🏮 地元民"},{"name":"三杯雞","description":"鶏肉の台湾風醤油煮込み","category":"🏮 地元民"},{"name":"麻油雞","description":"ごま油とショウガの鶏肉スープ","category":"🏮 地元民"},{"name":"菜脯蛋","description":"切り干し大根入り卵焼き","category":"🏮 地元民"},{"name":"客家小炒","description":"豚肉・イカ・豆腐干の炒め物","category":"🏮 地元民"},{"name":"碗粿","description":"米粉を蒸した台湾風茶碗蒸し","category":"🏮 地元民"},{"name":"油飯","description":"台湾風おこわ","category":"🏮 地元民"},{"name":"蘿蔔糕","description":"台湾風大根もち","category":"🏮 地元民"},{"name":"肉粽","description":"豚肉入り中華ちまき","category":"🏮 地元民"},{"name":"四神湯","description":"ハトムギと豚モツの薬膳スープ","category":"🏮 地元民"},{"name":"排骨酥湯","description":"揚げスペアリブのスープ","category":"🏮 地元民"},{"name":"藥燉排骨","description":"薬膳スペアリブスープ","category":"🏮 地元民"},{"name":"乾意麵","description":"台湾風汁なし麺","category":"🏮 地元民"},{"name":"芋粿巧","description":"タロイモ入りもち米粉の蒸し料理","category":"🏮 地元民"},{"name":"草仔粿","description":"ヨモギ入り台湾風草もち","category":"🏮 地元民"},{"name":"皮蛋豆腐","description":"ピータンと冷奴","category":"⚔️ ちょっと冒険"},{"name":"鵝肉","description":"ガチョウ肉料理","category":"⚔️ ちょっと冒険"},{"name":"臭豆腐","description":"発酵豆腐","category":"⚔️ ちょっと冒険"},{"name":"麻辣臭豆腐","description":"発酵豆腐のピリ辛煮込み","category":"⚔️ ちょっと冒険"},{"name":"麻辣鴨血","description":"鴨の血を固めた麻辣煮込み","category":"⚔️ ちょっと冒険"},{"name":"豬血糕","description":"豚の血入りもち米","category":"⚔️ ちょっと冒険"},{"name":"黑白切","description":"豚肉・内臓の盛り合わせ","category":"⚔️ ちょっと冒険"},{"name":"田雞湯","description":"カエル肉のスープ","category":"⚔️ ちょっと冒険"},{"name":"下水湯","description":"鶏の内臓入りスープ","category":"⚔️ ちょっと冒険"},{"name":"炒下水","description":"鶏の内臓炒め","category":"⚔️ ちょっと冒険"},{"name":"蛇湯","description":"ヘビスープ","category":"💀 覚悟"},{"name":"雞佛","description":"鶏の精巣料理","category":"💀 覚悟"},{"name":"生腸","description":"豚の子宮を使った料理","category":"💀 覚悟"},{"name":"豬腦湯","description":"豚の脳みそ入りスープ","category":"💀 覚悟"},{"name":"豬眼睛","description":"豚の目玉料理","category":"💀 覚悟"},{"name":"豬鞭","description":"豚の生殖器を使った料理","category":"💀 覚悟"},{"name":"炸蟋蟀","description":"コオロギの素揚げ","category":"💀 覚悟"}];
+
+const cats = ["すべて", "🔰 初心者", "🏮 地元民", "⚔️ ちょっと冒険", "💀 覚悟"];
+const input = document.querySelector("#search");
+const clear = document.querySelector("#clear");
+const filters = document.querySelector("#filters");
+const results = document.querySelector("#results");
+const count = document.querySelector("#result-count");
+const more = document.querySelector("#more");
+let selected = cats[0];
+let shown = 10;
+
+const normalized = s => String(s).normalize("NFKC").toLocaleLowerCase();
+function currentMatches() {
+  const terms = normalized(input.value.trim()).split(/\s+/).filter(Boolean);
+  return foods.filter(food => {
+    if (selected !== cats[0] && food.category !== selected) return false;
+    const text = normalized(`${food.name} ${food.description} ${food.category}`);
+    return terms.every(term => text.includes(term));
+  });
+}
+function addHighlightedText(parent, value, terms) {
+  // Uses DOM text nodes, not HTML interpolation, to keep all inputs safe.
+  const original = String(value);
+  const normalizedValue = normalized(original);
+  let ranges = [];
+  for (const term of terms) {
+    if (!term) continue;
+    let start = 0;
+    while (start < normalizedValue.length) {
+      const index = normalizedValue.indexOf(term, start);
+      if (index < 0) break;
+      // NFKC generally preserves positions for these CJK terms; if not, skip highlighting safely.
+      if (original.slice(index, index + term.length) &&
+          normalized(original.slice(index, index + term.length)) === term) {
+        ranges.push([index, index + term.length]);
+      }
+      start = index + Math.max(term.length, 1);
+    }
+  }
+  ranges.sort((a, b) => a[0] - b[0]);
+  let last = 0;
+  for (const [start, end] of ranges) {
+    if (start < last) continue;
+    parent.append(document.createTextNode(original.slice(last, start)));
+    const mark = document.createElement("mark");
+    mark.textContent = original.slice(start, end);
+    parent.append(mark);
+    last = end;
+  }
+  parent.append(document.createTextNode(original.slice(last)));
+}
+function drawFilters() {
+  filters.replaceChildren();
+  for (const cat of cats) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `pill${selected === cat ? " active" : ""}`;
+    button.setAttribute("aria-pressed", String(selected === cat));
+    const label = document.createElement("span");
+    label.textContent = cat;
+    const n = document.createElement("span");
+    n.className = "pill-count";
+    n.textContent = ` ${cat === cats[0] ? foods.length : foods.filter(f => f.category === cat).length}`;
+    button.append(label, n);
+    button.addEventListener("click", () => {
+      selected = cat;
+      shown = 10;
+      drawFilters();
+      drawResults();
+    });
+    filters.append(button);
+  }
+}
+function drawResults() {
+  const matched = currentMatches();
+  count.textContent = `${matched.length} 件`; 
+  results.replaceChildren();
+  const terms = normalized(input.value.trim()).split(/\s+/).filter(Boolean);
+  if (!terms.length && selected === cats[0]) {
+    count.textContent = `${foods.length} 品`;
+    const welcome = document.createElement("div");
+    welcome.className = "empty";
+    const face = document.createElement("span");
+    face.className = "emoji";
+    face.textContent = "🥢";
+    const message = document.createElement("span");
+    message.textContent = "気になる料理名・食材を入力するか、カテゴリーを選んでください。";
+    welcome.append(face, message);
+    results.append(welcome);
+    more.hidden = true;
+    return;
+  }
+  if (!matched.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    const face = document.createElement("span");
+    face.className = "emoji";
+    face.textContent = "🔎";
+    const message = document.createElement("span");
+    message.textContent = "該当する料理が見つかりません。別のキーワードを試してください。";
+    empty.append(face, message);
+    results.append(empty);
+  } else {
+    for (const food of matched.slice(0, shown)) {
+      const row = document.createElement("article");
+      row.className = "result";
+      const left = document.createElement("div");
+      const name = document.createElement("h3");
+      name.className = "dish";
+      const desc = document.createElement("p");
+      desc.className = "desc";
+      addHighlightedText(name, food.name, terms);
+      addHighlightedText(desc, food.description, terms);
+      left.append(name, desc);
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = food.category;
+      row.append(left, tag);
+      results.append(row);
+    }
+  }
+  more.hidden = matched.length <= shown;
+  if (!more.hidden) more.textContent = `もっと見る（残り ${matched.length - shown} 件）↓`;
+}
+function onSearch() {
+  shown = 10;
+  clear.classList.toggle("visible", input.value.length > 0);
+  drawResults();
+}
+input.addEventListener("input", onSearch);
+clear.addEventListener("click", () => { input.value = ""; onSearch(); input.focus(); });
+more.addEventListener("click", () => { shown += 10; drawResults(); });
+document.querySelectorAll("[data-example]").forEach(button => {
+  button.addEventListener("click", () => {
+    input.value = button.dataset.example;
+    onSearch();
+    input.focus();
+  });
+});
+drawFilters();
+onSearch();
+</script>
+</body>
+</html>
