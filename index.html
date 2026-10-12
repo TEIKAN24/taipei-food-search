@@ -129,10 +129,10 @@
   </label>
   <div class="quick" aria-label="おすすめ検索">
     <span>人気のキーワード</span>
-    <button type="button" data-example="牡蠣">牡蠣</button>
+    <button type="button" data-example="蚵仔">牡蠣</button>
     <button type="button" data-example="もち">もち</button>
-    <button type="button" data-example="スープ">スープ</button>
-    <button type="button" data-example="豆腐">豆腐</button>
+    <button type="button" data-example="雞">雞／鶏／チキン</button>
+    <button type="button" data-example="豬">猪／豚</button>
   </div>
   <nav class="filters" id="filters" aria-label="カテゴリーフィルター"></nav>
   <section aria-labelledby="list-title">
@@ -158,7 +158,7 @@ const results = document.querySelector("#results");
 const count = document.querySelector("#result-count");
 const more = document.querySelector("#more");
 let selected = cats[0];
-let shown = 10;
+let shown = foods.length;
 
 const normalized = s => String(s).normalize("NFKC").toLocaleLowerCase();
 function currentMatches() {
@@ -215,7 +215,7 @@ function drawFilters() {
     button.append(label, n);
     button.addEventListener("click", () => {
       selected = cat;
-      shown = 10;
+      shown = foods.length;
       drawFilters();
       drawResults();
     });
@@ -227,20 +227,7 @@ function drawResults() {
   count.textContent = `${matched.length} 件`; 
   results.replaceChildren();
   const terms = normalized(input.value.trim()).split(/\s+/).filter(Boolean);
-  if (!terms.length && selected === cats[0]) {
-    count.textContent = `${foods.length} 品`;
-    const welcome = document.createElement("div");
-    welcome.className = "empty";
-    const face = document.createElement("span");
-    face.className = "emoji";
-    face.textContent = "🥢";
-    const message = document.createElement("span");
-    message.textContent = "気になる料理名・食材を入力するか、カテゴリーを選んでください。";
-    welcome.append(face, message);
-    results.append(welcome);
-    more.hidden = true;
-    return;
-  }
+
   if (!matched.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
@@ -274,7 +261,7 @@ function drawResults() {
   if (!more.hidden) more.textContent = `もっと見る（残り ${matched.length - shown} 件）↓`;
 }
 function onSearch() {
-  shown = 10;
+  shown = foods.length;
   clear.classList.toggle("visible", input.value.length > 0);
   drawResults();
 }
