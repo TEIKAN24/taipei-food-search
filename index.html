@@ -84,7 +84,7 @@
     padding: 3px 9px; border-radius: 30px; cursor: pointer;
   }
   .quick button:hover { border-color: var(--accent); color: var(--accent); }
-  .filters { display: flex; gap: 7px; flex-wrap: wrap; margin: 20px 0 15px; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 11px; }
   .pill {
     border: 1px solid var(--border); background: var(--soft);
     border-radius: 100px; padding: 7px 10px;
@@ -126,7 +126,7 @@
   padding: 3px 4px;
 }
   mark { background: #365E4B; color: #FFFFFF; border-radius: 2px; padding: 0 1px; }
-  /* Mobile: display 2.6 rows; desktop: display 3 rows. */
+  /* Mobile: display 3.3 rows; desktop: display 3 rows. */
   #results.scrolling {
     overflow-y: auto;
     overflow-x: hidden;
@@ -137,8 +137,21 @@
   }
   #results.scrolling::-webkit-scrollbar { width: 7px; }
   #results.scrolling::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 8px; }
-  .scroll-tip { font-size: 11px; margin: 4px 2px 0; text-align: center; color: var(--muted); }
-  .scroll-tip[hidden] { display: none; }
+  /* Keep scroll guidance and optional spicy-food legend on one compact line. */
+  .scroll-tip {
+    font-size: 10px;
+    margin: 4px 2px 0;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 3px 9px;
+    text-align: center;
+  }
+  .scroll-tip[hidden], .spice-caption[hidden], #scroll-text[hidden] { display: none; }
+  .spice-caption { display: inline-flex; align-items: center; gap: 3px; }
+  .spice-caption .spice.maybe { padding: 0 3px; }
   .foot { text-align: center; color: var(--muted); font-size: 11px; margin: 10px 0 0; }
   @media (max-width: 420px) {
     main { border-radius: 12px; padding: 17px 13px 10px; }
@@ -161,11 +174,11 @@
   </label>
   <div class="quick" aria-label="おすすめ検索">
     <span>人気タグ</span>
-    <button type="button" data-example="鶏">鶏</button>
-    <button type="button" data-example="飯">飯</button>
-    <button type="button" data-example="麵">麵</button>
-    <button type="button" data-example="湯">湯</button>
-    <button type="button" data-example="餅">餅</button>
+    <button type="button" data-example="🐔" aria-label="鶏を検索">🐔</button>
+    <button type="button" data-example="🍚" aria-label="ご飯を検索">🍚</button>
+    <button type="button" data-example="🍜" aria-label="麺類を検索">🍜</button>
+    <button type="button" data-example="🦐" aria-label="エビ料理を検索">🦐</button>
+    <button type="button" data-example="🍪" aria-label="お菓子を検索">🍪</button>
   </div>
   <nav class="filters" id="filters" aria-label="カテゴリーフィルター"></nav>
   <section aria-labelledby="list-title">
@@ -174,7 +187,10 @@
       <span class="result-count" id="result-count" role="status" aria-live="polite"></span>
     </header>
     <div id="results" role="region" aria-label="料理の検索結果" tabindex="0"><div class="empty">料理データを読み込んでいます…</div></div>
-    <p id="scroll-tip" class="scroll-tip" hidden>↓ スクロールして続きを見る</p>
+    <p id="scroll-tip" class="scroll-tip" hidden>
+      <span id="scroll-text">↓ スクロールして続きを見る</span>
+      <span id="spice-caption" class="spice-caption" hidden><span class="spice maybe" aria-hidden="true">🌶️</span> 店によって辛い場合あり</span>
+    </p>
   </section>
   <p class="foot">台湾グルメ全<span id="total-food-count">—</span>品</p>
 </main>
@@ -194,6 +210,8 @@ const filters = document.querySelector("#filters");
 const results = document.querySelector("#results");
 const count = document.querySelector("#result-count");
 const scrollTip = document.querySelector("#scroll-tip");
+const scrollText = document.querySelector("#scroll-text");
+const spiceCaption = document.querySelector("#spice-caption");
 const footerCount = document.querySelector("#total-food-count");
 let selected = cats[0];
 
@@ -212,27 +230,27 @@ function currentMatches() {
   const terms = searchTerms();
 
   return foods.filter(food => {
-    // 保留原本的難度分類篩選
-    if (
-      selected !== cats[0] &&
-      food.category !== selected
-    ) return false;
+    // The difficulty filter still applies to all searches.
+    if (selected !== cats[0] && food.category !== selected) return false;
 
+    // Include hidden tags so partial Japanese words and emoji can be searched.
     const text = normalized(
-      `${food.name} ${food.description} ${food.category}`
+      `${food.name} ${food.description} ${food.category} ${(food.tags || []).join(" ")}`
     );
 
     return terms.every(term => {
+      // One pepper (or 辛い) finds all marked spicy dishes, including "maybe".
+      // Two/three peppers require at least that numerical spice level.
+      const peppers = term.match(/🌶️/gu) || [];
+      if (peppers.length && peppers.join("") === term) {
+        return peppers.length === 1
+          ? Boolean(food.spice)
+          : peppers.length <= 3 && Number(food.spice) >= peppers.length;
+      }
+      if (term === "辛い") return Boolean(food.spice);
 
-      // ① 搜尋 foods.csv 的 Emoji tags
-      const tagMatch = (food.tags || [])
-        .some(tag => normalized(tag) === term);
-
-      // ② 保留原本的文字與同義詞搜尋
-      const textMatch = variantsFor(term)
-        .some(alias => text.includes(alias));
-
-      return tagMatch || textMatch;
+      // Preserve the existing traditional/simplified/Japanese synonym groups.
+      return variantsFor(term).some(alias => text.includes(alias));
     });
   });
 }
@@ -292,18 +310,20 @@ function drawFilters() {
 function resizeResultViewport() {
   const rows = [...results.querySelectorAll(".result")];
   const mobile = window.matchMedia("(max-width: 600px)").matches;
-  // Change 2.6 to 2.5 or 2.7 to fine-tune the mobile result window.
+  // Change 3.3 to 3.1 or 3.5 to fine-tune the mobile result window.
   const visibleRows = mobile ? 3.3 : 3;
   const fullRows = Math.floor(visibleRows);
   const needsScroll = rows.length > fullRows;
   results.classList.toggle("scrolling", needsScroll);
-  scrollTip.hidden = !needsScroll;
+  scrollText.hidden = !needsScroll;
+  // Show the compact dashed-pepper explanation only when relevant.
+  scrollTip.hidden = !needsScroll && spiceCaption.hidden;
   if (!needsScroll) {
     results.style.maxHeight = "none";
     return;
   }
   // Measure actual rendered rows, including Japanese text wrapping.
-  // Show two full rows plus 60% of the third on mobile.
+  // Show three full rows plus 30% of the fourth on mobile.
   const fullHeight = rows.slice(0, fullRows).reduce((sum, row) => sum + row.getBoundingClientRect().height, 0);
   const nextHeight = rows[fullRows]?.getBoundingClientRect().height ?? 0;
   const fraction = visibleRows - fullRows;
@@ -313,6 +333,7 @@ function resizeResultViewport() {
 function drawResults() {
   const matched = currentMatches();
   count.textContent = `${matched.length} 件`;
+  spiceCaption.hidden = !matched.some(food => food.spice === "maybe");
   results.replaceChildren();
   results.style.maxHeight = "none";
   results.classList.toggle("scrolling", matched.length > (window.matchMedia("(max-width: 600px)").matches ? 2 : 3));
@@ -326,7 +347,7 @@ function drawResults() {
     face.className = "emoji";
     face.textContent = "🔎";
     const message = document.createElement("span");
-    message.textContent = "該当する料理が見つかりません。別のキーワードを試してください。";
+    message.textContent = "該当する料理が見つかりません。料理名・🍜・シーフードなどで検索してください。";
     empty.append(face, message);
     results.append(empty);
   } else {
@@ -388,7 +409,7 @@ function onSearch() {
   drawResults();
 }
 input.addEventListener("input", onSearch);
-clear.addEventListener("click", () => { input.value = ""; onSearch(); input.focus(); });
+clear.addEventListener("click", () => { input.value = ""; onSearch(); input.blur(); });
 document.querySelectorAll("[data-example]").forEach(button => {
   button.addEventListener("click", () => {
     input.value = button.dataset.example;
