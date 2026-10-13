@@ -317,7 +317,7 @@ document.querySelectorAll("[data-example]").forEach(button => {
   button.addEventListener("click", () => {
     input.value = button.dataset.example;
     onSearch();
-    input.focus();
+    input.blur();
   });
 });
 window.addEventListener("resize", () => requestAnimationFrame(resizeResultViewport));
