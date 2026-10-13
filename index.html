@@ -137,11 +137,11 @@
   }
   #results.scrolling::-webkit-scrollbar { width: 7px; }
   #results.scrolling::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 8px; }
-  .scroll-tip { font-size: 11px; margin: 9px 2px 0; text-align: center; color: var(--muted); }
+  .scroll-tip { font-size: 11px; margin: 4px 2px 0; text-align: center; color: var(--muted); }
   .scroll-tip[hidden] { display: none; }
-  .foot { text-align: center; color: var(--muted); font-size: 11px; margin: 20px 0 0; }
+  .foot { text-align: center; color: var(--muted); font-size: 11px; margin: 10px 0 0; }
   @media (max-width: 420px) {
-    main { border-radius: 12px; padding: 17px 13px 20px; }
+    main { border-radius: 12px; padding: 17px 13px 10px; }
     .tag { font-size: 9px; }
     .result { gap: 5px; }
     .pill { font-size: 11px; padding: 7px 9px; }
@@ -293,7 +293,7 @@ function resizeResultViewport() {
   const rows = [...results.querySelectorAll(".result")];
   const mobile = window.matchMedia("(max-width: 600px)").matches;
   // Change 2.6 to 2.5 or 2.7 to fine-tune the mobile result window.
-  const visibleRows = mobile ? 2.6 : 3;
+  const visibleRows = mobile ? 3.3 : 3;
   const fullRows = Math.floor(visibleRows);
   const needsScroll = rows.length > fullRows;
   results.classList.toggle("scrolling", needsScroll);
