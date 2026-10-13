@@ -121,8 +121,8 @@
 
 /* 可能會辣：虛線外框 */
 .spice.maybe {
-  border: 1px dashed var(--muted);
-  border-radius: 4px;
+  border: 1px dashed #A75E48;
+  border-radius: 5px;
   padding: 3px 4px;
 }
   mark { background: #365E4B; color: #FFFFFF; border-radius: 2px; padding: 0 1px; }
@@ -150,8 +150,6 @@
     text-align: center;
   }
   .scroll-tip[hidden], .spice-caption[hidden], #scroll-text[hidden] { display: none; }
-  .spice-caption { display: inline-flex; align-items: center; gap: 3px; }
-  .spice-caption .spice.maybe { padding: 0 3px; }
   .foot { text-align: center; color: var(--muted); font-size: 11px; margin: 10px 0 0; }
   @media (max-width: 420px) {
     main { border-radius: 12px; padding: 17px 13px 10px; }
@@ -189,7 +187,6 @@
     <div id="results" role="region" aria-label="料理の検索結果" tabindex="0"><div class="empty">料理データを読み込んでいます…</div></div>
     <p id="scroll-tip" class="scroll-tip" hidden>
       <span id="scroll-text">↓ スクロールして続きを見る</span>
-      <span id="spice-caption" class="spice-caption" hidden><span class="spice maybe" aria-hidden="true">🌶️</span> 店によって辛い場合あり</span>
     </p>
   </section>
   <p class="foot">台湾グルメ全<span id="total-food-count">—</span>品</p>
@@ -211,7 +208,6 @@ const results = document.querySelector("#results");
 const count = document.querySelector("#result-count");
 const scrollTip = document.querySelector("#scroll-tip");
 const scrollText = document.querySelector("#scroll-text");
-const spiceCaption = document.querySelector("#spice-caption");
 const footerCount = document.querySelector("#total-food-count");
 let selected = cats[0];
 
@@ -317,7 +313,7 @@ function resizeResultViewport() {
   results.classList.toggle("scrolling", needsScroll);
   scrollText.hidden = !needsScroll;
   // Show the compact dashed-pepper explanation only when relevant.
-  scrollTip.hidden = !needsScroll && spiceCaption.hidden;
+  scrollTip.hidden = !needsScroll;
   if (!needsScroll) {
     results.style.maxHeight = "none";
     return;
@@ -333,7 +329,6 @@ function resizeResultViewport() {
 function drawResults() {
   const matched = currentMatches();
   count.textContent = `${matched.length} 件`;
-  spiceCaption.hidden = !matched.some(food => food.spice === "maybe");
   results.replaceChildren();
   results.style.maxHeight = "none";
   results.classList.toggle("scrolling", matched.length > (window.matchMedia("(max-width: 600px)").matches ? 2 : 3));
