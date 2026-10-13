@@ -103,6 +103,28 @@
   .dish { margin: 0 0 3px; font-weight: 725; font-size: 15px; line-height: 1.4; }
   .desc { margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
   .tag { white-space: nowrap; font-size: 10px; padding: 3px 6px; border-radius: 6px; color: var(--muted); background: var(--soft); margin-top: 3px; }
+  /* 右側：等級分類＋辣度 */
+.result-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 辣度 Emoji */
+.spice {
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* 可能會辣：虛線外框 */
+.spice.maybe {
+  border: 1px dashed var(--muted);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
   mark { background: #365E4B; color: #FFFFFF; border-radius: 2px; padding: 0 1px; }
   /* Mobile: display 2.6 rows; desktop: display 3 rows. */
   #results.scrolling {
@@ -319,10 +341,42 @@ function drawResults() {
       addHighlightedText(name, food.name, highlightTerms);
       addHighlightedText(desc, food.description, highlightTerms);
       left.append(name, desc);
-      const tag = document.createElement("span");
-      tag.className = "tag";
-      tag.textContent = food.category;
-      row.append(left, tag);
+      
+const meta = document.createElement("div");
+meta.className = "result-meta";
+
+// 原本的等級分類
+const tag = document.createElement("span");
+tag.className = "tag";
+tag.textContent = food.category;
+meta.append(tag);
+
+// 辣度：沒有設定就不顯示
+if (food.spice) {
+  const spice = document.createElement("span");
+
+  const isMaybe = food.spice === "maybe";
+
+  spice.className = isMaybe
+    ? "spice maybe"
+    : "spice";
+
+  spice.textContent = isMaybe
+    ? "🌶️"
+    : "🌶️".repeat(Number(food.spice));
+
+  const label = isMaybe
+    ? "お店によって辛い場合があります"
+    : `辛さの目安：${food.spice} / 3`;
+
+  spice.setAttribute("aria-label", label);
+  spice.title = label;
+
+  meta.append(spice);
+}
+
+row.append(left, meta);
+
       results.append(row);
     }
   }
@@ -382,10 +436,16 @@ function parseCsv(text) {
   category: item.category,
   name: item.name,
   description: item.description,
-  tags: (item.tags || "")
-    .split("|")
-    .map(tag => tag.trim())
-    .filter(Boolean)
+  
+tags: (item.tags || "")
+  .split("|")
+  .map(tag => tag.trim())
+  .filter(Boolean),
+
+spice: ["1", "2", "3", "maybe"].includes(item.spice)
+  ? item.spice
+  : ""
+
 };
   }).sort((a, b) => cats.indexOf(a.category) - cats.indexOf(b.category));
 }
