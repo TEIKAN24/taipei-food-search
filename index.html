@@ -185,14 +185,36 @@ function variantsFor(term) {
 function searchTerms() {
   return normalized(input.value.trim()).split(/\s+/).filter(Boolean);
 }
+
 function currentMatches() {
   const terms = searchTerms();
+
   return foods.filter(food => {
-    if (selected !== cats[0] && food.category !== selected) return false;
-    const text = normalized(`${food.name} ${food.description} ${food.category}`);
-    return terms.every(term => variantsFor(term).some(alias => text.includes(alias)));
+    // 保留原本的難度分類篩選
+    if (
+      selected !== cats[0] &&
+      food.category !== selected
+    ) return false;
+
+    const text = normalized(
+      `${food.name} ${food.description} ${food.category}`
+    );
+
+    return terms.every(term => {
+
+      // ① 搜尋 foods.csv 的 Emoji tags
+      const tagMatch = (food.tags || [])
+        .some(tag => normalized(tag) === term);
+
+      // ② 保留原本的文字與同義詞搜尋
+      const textMatch = variantsFor(term)
+        .some(alias => text.includes(alias));
+
+      return tagMatch || textMatch;
+    });
   });
 }
+
 function addHighlightedText(parent, value, terms) {
   // Uses DOM text nodes, not HTML interpolation, to keep all inputs safe.
   const original = String(value);
@@ -357,10 +379,14 @@ function parseCsv(text) {
       throw new Error(`foods.csv の ${position + 2} 行目を確認してください。`);
     }
     return {
-      category: item.category,
-      name: item.name,
-      description: item.description
-    };
+  category: item.category,
+  name: item.name,
+  description: item.description,
+  tags: (item.tags || "")
+    .split("|")
+    .map(tag => tag.trim())
+    .filter(Boolean)
+};
   }).sort((a, b) => cats.indexOf(a.category) - cats.indexOf(b.category));
 }
 
